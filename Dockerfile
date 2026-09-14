@@ -9,10 +9,15 @@ COPY package.json package-lock.json ./
 
 # Install dependencies with npm (matches the Cloudflare Pages production
 # build path for this repo, which also installs via npm/package-lock.json).
+# `npm install`, not `npm ci`: package-lock.json's optionalDependencies
+# resolution is platform-conditional (e.g. the `canvas` native-build
+# chain), so a lockfile regenerated on a different OS than the build
+# won't satisfy `npm ci`'s exact-match check. `npm install` just
+# resolves what the current platform needs instead.
 # Cache npm's cache across builds/dependency bumps so a cold `deps` layer
 # doesn't re-download the whole tree from the registry every time.
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+    npm install
 
 # Stage 2: builder
 FROM deps AS builder
