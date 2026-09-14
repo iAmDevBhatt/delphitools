@@ -1,19 +1,18 @@
 # syntax=docker/dockerfile:1
 
 # Stage 1: dependencies
-FROM oven/bun:1 AS deps
+FROM node:22-slim AS deps
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* bun.lock* bun.lockb* ./
+COPY package.json package-lock.json ./
 
-# Install dependencies using Bun (no bun.lock committed yet, so no
-# --frozen-lockfile: bun resolves from package.json/package-lock.json).
-# Cache bun's install cache across builds/dependency bumps so a cold
-# `deps` layer doesn't re-download the whole tree (incl. native
-# binaries like mupdf/resvg-js) from the registry.
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-    bun install
+# Install dependencies with npm (matches the Cloudflare Pages production
+# build path for this repo, which also installs via npm/package-lock.json).
+# Cache npm's cache across builds/dependency bumps so a cold `deps` layer
+# doesn't re-download the whole tree from the registry every time.
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Stage 2: builder
 FROM deps AS builder
@@ -32,7 +31,7 @@ ENV DT_COMMIT_SHA=$COMMIT_SHA
 
 # Build the SPA (client-side only — no prerender step, so no headless
 # Chrome/Puppeteer needed in the image). Output lands in ./dist.
-RUN bun run build
+RUN npm run build
 
 # Stage 3: production runtime — serve the static build with Bun itself
 FROM oven/bun:1-slim AS runner
