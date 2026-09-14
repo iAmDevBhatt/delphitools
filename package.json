@@ -164,7 +164,7 @@
 		"prosemirror-view": "^1.41.8",
 		"puppeteer-core": "^25.5.0",
 		"qr-code-styling": "^1.9.2",
-		"sass-embedded": "^1.100.0",
+		"sass": "^1.100.0",
 		"satori": "^0.29.0",
 		"svgo": "^4.0.2",
 		"tracked-built-ins": "^4.1.2"

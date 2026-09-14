@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # Stage 1: dependencies
 FROM oven/bun:1 AS deps
 WORKDIR /app
@@ -6,8 +8,12 @@ WORKDIR /app
 COPY package.json package-lock.json* bun.lock* bun.lockb* ./
 
 # Install dependencies using Bun (no bun.lock committed yet, so no
-# --frozen-lockfile: bun resolves from package.json/package-lock.json)
-RUN bun install
+# --frozen-lockfile: bun resolves from package.json/package-lock.json).
+# Cache bun's install cache across builds/dependency bumps so a cold
+# `deps` layer doesn't re-download the whole tree (incl. native
+# binaries like mupdf/resvg-js) from the registry.
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install
 
 # Stage 2: builder
 FROM deps AS builder
